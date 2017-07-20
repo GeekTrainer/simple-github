@@ -1,27 +1,38 @@
 const env = require('dotenv');
 env.config();
 
-var builder = require('botbuilder');
-var restify = require('restify');
-var githubClient = require('./github-client.js');
+const builder = require('botbuilder');
+const restify = require('restify');
+const githubClient = require('./github-client.js');
 
-var connector = new builder.ChatConnector();
-var bot = new builder.UniversalBot(
+const connector = new builder.ChatConnector();
+const bot = new builder.UniversalBot(
     connector,
     (session) => {
         session.endConversation(`Hi there! I'm the GitHub bot. I can help you find GitHub users.`);
     }
 );
 
+const recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
+recognizer.onEnabled((context, callback) => {
+    if(context.dialogStack().length > 0) {
+        // we are in a conversation
+        callback(null, false);
+    } else {
+        callback(null, true)
+    }
+});
+bot.recognizer(recognizer);
+
 bot.dialog('search', [
     (session, args, next) => {
-        if (session.message.text.toLowerCase() == 'search') {
-            // TODO: Prompt user for text
+        const query = builder.EntityRecognizer.findEntity(args.intent.entities, 'query');
+        if (!query) {
+            // No matching entity
             builder.Prompts.text(session, `Who did you want to search for?`);
         } else {
             // the user typed in: search <<name>>
-            var query = session.message.text.substring(7);
-            next({ response: query });
+            next({ response: query.entity });
         }
     },
     (session, results, next) => {
@@ -77,7 +88,7 @@ bot.dialog('search', [
         });
     }
 ]).triggerAction({
-    matches: /^search/i
+    matches: 'SearchProfile'
 })
 
 var server = restify.createServer();
