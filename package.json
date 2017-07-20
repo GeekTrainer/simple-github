@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "botbuilder": "^3.8.4",
+    "dotenv": "^4.0.0",
+    "restify": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/restify": "^5.0.1"
+  }
+}
